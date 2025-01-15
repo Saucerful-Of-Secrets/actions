@@ -4,6 +4,11 @@ dotenv.config();
 
 const apiKeyTg = process.env.TG_BOT_MyTestBoooot;
 const sUrl = process.env.LOCAL_URL_HTTPS;
+
+if (!apiKeyTg || !sUrl) {
+  throw new Error('Missing required environment variables');
+}
+
 const bot = new TelegramBot(apiKeyTg, { polling: true });
 
 bot.onText(/\/start/, async (msg) => {
@@ -17,10 +22,12 @@ bot.onText(/\/start/, async (msg) => {
       const actions = data.links.actions;
 
       const message = 'Actions:\n';
-      const buttons = actions.map((action) => ({
-        text: action.label,
-        url: `${sUrl}/api/action/donate?href=${encodeURIComponent(action.href)}`,
-      }));
+      const buttons = actions.map(
+        (action: { label: string; href: string }) => ({
+          text: action.label,
+          url: `${sUrl}/api/action/donate?href=${encodeURIComponent(action.href)}`,
+        })
+      );
 
       bot.sendMessage(chatId, message, {
         reply_markup: {
