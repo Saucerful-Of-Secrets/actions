@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -18,17 +19,23 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 const ActionPage = () => {
   const { publicKey, connected, signTransaction } = useWallet();
   const [actionHref, setActionHref] = useState<string | null>(null);
+  const [actionExecuted, setActionExecuted] = useState(false);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const href = urlParams.get('href');
-
     if (href) {
       setActionHref(href);
     } else {
       alert('No action specified!');
     }
   }, []);
+
+  useEffect(() => {
+    if (connected && publicKey && actionHref && !actionExecuted) {
+      sendAction();
+    }
+  }, [connected, publicKey, actionHref, actionExecuted]);
 
   const sendAction = async () => {
     if (!connected || !publicKey || !actionHref) {
@@ -37,6 +44,7 @@ const ActionPage = () => {
     }
 
     try {
+      setActionExecuted(true);
       const response = await fetch(actionHref, {
         method: 'POST',
         headers: {
@@ -96,21 +104,7 @@ const ActionPage = () => {
     <div style={{ textAlign: 'center', padding: '50px' }}>
       <h1>Execute Action</h1>
       <WalletMultiButton />
-      <button
-        onClick={sendAction}
-        disabled={!connected || !publicKey || !actionHref}
-        style={{
-          marginTop: '20px',
-          padding: '10px 20px',
-          backgroundColor: '#4CAF50',
-          color: 'white',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer',
-        }}
-      >
-        Execute Action
-      </button>
+      {!connected && <p>Please connect your wallet to proceed.</p>}
     </div>
   );
 };
