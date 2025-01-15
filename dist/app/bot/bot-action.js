@@ -19,7 +19,7 @@ bot.onText(/\/start/, async (msg) => {
       let message = 'Actions:\n';
       const buttons = actions.map((action) => ({
         text: action.label,
-        url: `${sUrl}/api/action/donate?href=${encodeURIComponent(action.href)}`,
+        url: `${sUrl}api/action/donate?href=${encodeURIComponent(action.href)}`,
       }));
 
       bot.sendMessage(chatId, message, {
