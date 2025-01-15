@@ -15,9 +15,8 @@ import {
 import '@solana/wallet-adapter-react-ui/styles.css';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
-const InnerComponent = () => {
+const ActionPage = () => {
   const { publicKey, connected, signTransaction } = useWallet();
-  const [actionLabel, setActionLabel] = useState<string>('');
   const [actionHref, setActionHref] = useState<string | null>(null);
 
   useEffect(() => {
@@ -27,29 +26,13 @@ const InnerComponent = () => {
     if (href) {
       setActionHref(href);
     } else {
-      const fetchAction = async () => {
-        try {
-          const response = await fetch('/api/actions/donate');
-          if (!response.ok) {
-            throw new Error(`HTTP Error: ${response.status}`);
-          }
-          const data = await response.json();
-          const action = data.links.actions[0];
-
-          setActionLabel(action.label);
-          setActionHref(action.href);
-        } catch (error) {
-          console.error('Error fetching action:', error);
-        }
-      };
-
-      fetchAction();
+      alert('No action specified!');
     }
   }, []);
 
   const sendAction = async () => {
     if (!connected || !publicKey || !actionHref) {
-      alert('Please connect your wallet first or select an action.');
+      alert('Please connect your wallet first or provide a valid action.');
       return;
     }
 
@@ -67,7 +50,6 @@ const InnerComponent = () => {
       }
 
       const result = await response.json();
-      console.log('API Response:', result);
 
       if (result.transaction) {
         await sendTransactionToWallet(result.transaction);
@@ -103,8 +85,6 @@ const InnerComponent = () => {
         signedTransaction.serialize()
       );
 
-      console.log('Transaction Signature:', signature);
-
       alert(`Transaction sent successfully! Signature: ${signature}`);
     } catch (error) {
       console.error('Error sending transaction:', error);
@@ -112,39 +92,25 @@ const InnerComponent = () => {
     }
   };
 
-  useEffect(() => {
-    if (actionHref && connected && publicKey) {
-      sendAction();
-    }
-  }, [actionHref, connected, publicKey]);
-
   return (
     <div style={{ textAlign: 'center', padding: '50px' }}>
-      <h1>Solana Wallet Action</h1>
-      <div
+      <h1>Execute Action</h1>
+      <WalletMultiButton />
+      <button
+        onClick={sendAction}
+        disabled={!connected || !publicKey || !actionHref}
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '10px',
+          marginTop: '20px',
+          padding: '10px 20px',
+          backgroundColor: '#4CAF50',
+          color: 'white',
+          border: 'none',
+          borderRadius: '5px',
+          cursor: 'pointer',
         }}
       >
-        <WalletMultiButton />
-        <button
-          onClick={sendAction}
-          disabled={!connected || !publicKey || !actionHref}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#4CAF50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: 'pointer',
-          }}
-        >
-          {actionLabel || 'Loading...'}
-        </button>
-      </div>
+        Execute Action
+      </button>
     </div>
   );
 };
@@ -156,7 +122,7 @@ const App = () => {
     <ConnectionProvider endpoint={clusterApiUrl(WalletAdapterNetwork.Devnet)}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
-          <InnerComponent />
+          <ActionPage />
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
