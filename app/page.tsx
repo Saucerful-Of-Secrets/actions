@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -15,38 +16,35 @@ import {
 import '@solana/wallet-adapter-react-ui/styles.css';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 
-const InnerComponent = () => {
+const ActionPage = () => {
   const { publicKey, connected, signTransaction } = useWallet();
-  const [actionLabel, setActionLabel] = useState<string>('');
-  const [actionHref, setActionHref] = useState<string>('');
+  const [actionHref, setActionHref] = useState<string | null>(null);
+  const [actionExecuted, setActionExecuted] = useState(false);
 
   useEffect(() => {
-    const fetchAction = async () => {
-      try {
-        const response = await fetch('/api/actions/donate');
-        if (!response.ok) {
-          throw new Error(`HTTP Error: ${response.status}`);
-        }
-        const data = await response.json();
-        const action = data.links.actions[0];
-
-        setActionLabel(action.label);
-        setActionHref(action.href);
-      } catch (error) {
-        console.error('Error fetching action:', error);
-      }
-    };
-
-    fetchAction();
+    const urlParams = new URLSearchParams(window.location.search);
+    const href = urlParams.get('href');
+    if (href) {
+      setActionHref(href);
+    } else {
+      alert('No action specified!');
+    }
   }, []);
 
+  useEffect(() => {
+    if (connected && publicKey && actionHref && !actionExecuted) {
+      sendAction();
+    }
+  }, [connected, publicKey, actionHref, actionExecuted]);
+
   const sendAction = async () => {
-    if (!connected || !publicKey) {
-      alert('Please connect your wallet first.');
+    if (!connected || !publicKey || !actionHref) {
+      alert('Please connect your wallet first or provide a valid action.');
       return;
     }
 
     try {
+      setActionExecuted(true);
       const response = await fetch(actionHref, {
         method: 'POST',
         headers: {
@@ -60,7 +58,6 @@ const InnerComponent = () => {
       }
 
       const result = await response.json();
-      console.log('API Response:', result);
 
       if (result.transaction) {
         await sendTransactionToWallet(result.transaction);
@@ -96,8 +93,6 @@ const InnerComponent = () => {
         signedTransaction.serialize()
       );
 
-      console.log('Transaction Signature:', signature);
-
       alert(`Transaction sent successfully! Signature: ${signature}`);
     } catch (error) {
       console.error('Error sending transaction:', error);
@@ -107,31 +102,9 @@ const InnerComponent = () => {
 
   return (
     <div style={{ textAlign: 'center', padding: '50px' }}>
-      <h1>Solana Wallet Action</h1>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '10px',
-        }}
-      >
-        <WalletMultiButton />
-        <button
-          onClick={sendAction}
-          disabled={!connected || !publicKey || !actionHref}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#4CAF50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: 'pointer',
-          }}
-        >
-          {actionLabel || 'Loading...'}
-        </button>
-      </div>
+      <h1>Execute Action</h1>
+      <WalletMultiButton />
+      {!connected && <p>Please connect your wallet to proceed.</p>}
     </div>
   );
 };
@@ -143,7 +116,7 @@ const App = () => {
     <ConnectionProvider endpoint={clusterApiUrl(WalletAdapterNetwork.Devnet)}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
-          <InnerComponent />
+          <ActionPage />
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
