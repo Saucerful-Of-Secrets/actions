@@ -25,7 +25,7 @@ bot.onText(/\/start/, async (msg) => {
       const buttons = actions.map(
         (action: { label: string; href: string }) => ({
           text: action.label,
-          url: `${sUrl}/api/action/donate?href=${encodeURIComponent(action.href)}`,
+          url: `${sUrl}api/action/donate?href=${encodeURIComponent(action.href)}`,
         })
       );
 
