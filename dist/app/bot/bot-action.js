@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 const apiKeyTg = process.env.TG_BOT_MyTestBoooot;
-const sUrl = process.env.LOCAL_URL_HTTPS_DEV;
+const sUrl = process.env.LOCAL_URL_HTTPS;
 const bot = new TelegramBot(apiKeyTg, { polling: true });
 
 bot.onText(/\/start/, async (msg) => {
