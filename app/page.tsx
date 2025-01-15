@@ -18,31 +18,38 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 const InnerComponent = () => {
   const { publicKey, connected, signTransaction } = useWallet();
   const [actionLabel, setActionLabel] = useState<string>('');
-  const [actionHref, setActionHref] = useState<string>('');
+  const [actionHref, setActionHref] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchAction = async () => {
-      try {
-        const response = await fetch('/api/actions/donate');
-        if (!response.ok) {
-          throw new Error(`HTTP Error: ${response.status}`);
+    const urlParams = new URLSearchParams(window.location.search);
+    const href = urlParams.get('href');
+
+    if (href) {
+      setActionHref(href);
+    } else {
+      const fetchAction = async () => {
+        try {
+          const response = await fetch('/api/actions/donate');
+          if (!response.ok) {
+            throw new Error(`HTTP Error: ${response.status}`);
+          }
+          const data = await response.json();
+          const action = data.links.actions[0];
+
+          setActionLabel(action.label);
+          setActionHref(action.href);
+        } catch (error) {
+          console.error('Error fetching action:', error);
         }
-        const data = await response.json();
-        const action = data.links.actions[0];
+      };
 
-        setActionLabel(action.label);
-        setActionHref(action.href);
-      } catch (error) {
-        console.error('Error fetching action:', error);
-      }
-    };
-
-    fetchAction();
+      fetchAction();
+    }
   }, []);
 
   const sendAction = async () => {
-    if (!connected || !publicKey) {
-      alert('Please connect your wallet first.');
+    if (!connected || !publicKey || !actionHref) {
+      alert('Please connect your wallet first or select an action.');
       return;
     }
 
@@ -104,6 +111,12 @@ const InnerComponent = () => {
       alert(`Failed to send transaction: ${error}`);
     }
   };
+
+  useEffect(() => {
+    if (actionHref && connected && publicKey) {
+      sendAction();
+    }
+  }, [actionHref, connected, publicKey]);
 
   return (
     <div style={{ textAlign: 'center', padding: '50px' }}>
